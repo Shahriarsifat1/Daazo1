@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Orders Panel - ShopNow</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Soft Blue and White Theme */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Roboto', sans-serif; 
+            background: #f0f7ff; /* Light blue background */
+            color: #2d3748; /* Dark gray text */
+            line-height: 1.6; 
+            overflow-x: hidden;
+        }
+        .header { 
+            background: #ffffff; /* White header */
+            padding: 10px 15px; 
+            color: #2d3748; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .header-title { font-size: 20px; font-weight: 700; }
+        .toggle-buttons { display: flex; gap: 10px; }
+        .toggle-btn { 
+            background: #e2e8f0; 
+            color: #2d3748; 
+            border: none; 
+            padding: 8px 15px; 
+            border-radius: 20px; 
+            cursor: pointer; 
+            font-size: 14px; 
+            transition: background 0.3s, color 0.3s;
+        }
+        .toggle-btn.active { background: #3182ce; color: #fff; }
+        .toggle-btn:hover { background: #cbd5e0; }
+
+        .orders-container { max-width: 1100px; margin: 20px auto; padding: 0 10px; }
+        .order-section { margin-bottom: 20px; }
+        .order-section.hidden { display: none; }
+        .orders-section-title { font-size: 18px; font-weight: 600; color: #4a5568; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #e2e8f0; }
+        .order-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+        .order-card-compact { 
+            background: #ffffff; /* White card */
+            border: 1px solid #e2e8f0; 
+            border-radius: 10px; 
+            padding: 12px; 
+            transition: transform 0.3s ease, border-color 0.3s ease; 
+            display: flex; 
+            flex-direction: column;
+        }
+        .order-card-compact:hover { transform: scale(1.02); border-color: #3182ce; }
+        .order-header-compact { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .order-id-compact { font-size: 16px; font-weight: 700; color: #3182ce; }
+        .order-status-compact { 
+            font-size: 12px; 
+            padding: 4px 10px; 
+            border-radius: 15px; 
+            font-weight: 500; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+        }
+        .order-status-compact.pending { background: #fefcbf; color: #b7791f; }
+        .order-status-compact.completed { background: #b2f5ea; color: #2c7a7b; }
+        .order-image-compact { width: 50px; height: 50px; object-fit: contain; border-radius: 8px; margin-right: 8px; background: #edf2f7; }
+        .order-info-header { display: flex; align-items: flex-start; }
+        .order-details-compact { font-size: 12px; color: #718096; margin-bottom: 8px; }
+        .order-address-compact { font-size: 11px; color: #718096; margin-bottom: 8px; line-height: 1.4; }
+        .order-address-compact strong { color: #4a5568; font-weight: 500; }
+        .order-total-compact { font-size: 15px; font-weight: 600; color: #2d3748; margin-bottom: 10px; }
+        .complete-button-compact { 
+            background: #3182ce; 
+            color: #fff; 
+            border: none; 
+            padding: 6px 12px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 12px; 
+            align-self: flex-start; 
+            transition: background 0.3s;
+        }
+        .complete-button-compact:hover { background: #2b6cb0; }
+        .empty-state { text-align: center; padding: 20px; color: #718096; }
+        .empty-state i { font-size: 30px; margin-bottom: 10px; color: #a0aec0; }
+        .error-state { text-align: center; padding: 20px; color: #f56565; }
+        .error-state i { font-size: 30px; margin-bottom: 10px; }
+        .order-products-list { margin-bottom: 8px; }
+        .order-product-item { display: flex; align-items: center; margin-bottom: 4px; font-size: 11px; color: #4a5568; }
+        .order-product-item img { width: 30px; height: 30px; object-fit: contain; border-radius: 5px; margin-right: 5px; background: #edf2f7; }
+        .order-summary-details { margin-top: 8px; border-top: 1px dashed #e2e8f0; padding-top: 8px; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 11px; color: #718096; }
+        .summary-row.total-price { font-weight: 500; color: #2d3748; }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .header { padding: 8px 10px; }
+            .header-title { font-size: 18px; }
+            .toggle-btn { padding: 6px 10px; font-size: 12px; }
+            .orders-container { margin: 10px auto; padding: 0 5px; }
+            .orders-section-title { font-size: 16px; margin-bottom: 8px; }
+            .order-grid { grid-template-columns: 1fr; gap: 10px; }
+            .order-card-compact { padding: 8px; }
+            .order-header-compact { flex-direction: column; align-items: flex-start; margin-bottom: 8px; }
+            .order-id-compact { font-size: 14px; }
+            .order-info-header { flex-direction: column; align-items: flex-start; }
+            .order-image-compact { margin-bottom: 8px; width: 40px; height: 40px; }
+            .order-details-compact, .order-address-compact, .order-total-compact, .complete-button-compact { font-size: 10px; }
+            .complete-button-compact { padding: 4px 8px; }
+            .order-product-item { font-size: 10px; }
+            .order-product-item img { width: 25px; height: 25px; }
+            .summary-row { font-size: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-title">Admin Orders Dashboard</div>
+        <div class="toggle-buttons">
+            <button class="toggle-btn active" onclick="toggleSection('pending')">Pending</button>
+            <button class="toggle-btn" onclick="toggleSection('completed')">Completed</button>
+        </div>
+    </div>
+
+    <div class="orders-container" id="ordersContainer">
+        <div class="order-section" id="pendingOrdersSection">
+            <h2 class="orders-section-title">Pending Orders</h2>
+            <div class="order-grid" id="pendingOrdersGrid">
+                <!-- Pending orders will be rendered as compact cards here -->
+            </div>
+        </div>
+
+        <div class="order-section hidden" id="completedOrdersSection">
+            <h2 class="orders-section-title">Completed Orders</h2>
+            <div class="order-grid" id="completedOrdersGrid">
+                <!-- Completed orders will be rendered as compact cards here -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBsz-82MDaibWnIBUpoykrZHyJW7UMedX8",
+            authDomain: "movies-bee24.firebaseapp.com",
+            databaseURL: "https://movies-bee24-default-rtdb.firebaseio.com",
+            projectId: "movies-bee24",
+            storageBucket: "movies-bee24.appspot.com",
+            messagingSenderId: "1080659811750",
+            appId: "1:1080659811750:web:c1ef7d4dacc3ab17edc367"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+        }
+
+        window.toggleSection = function(section) {
+            const pendingSection = document.getElementById('pendingOrdersSection');
+            const completedSection = document.getElementById('completedOrdersSection');
+            const pendingBtn = document.querySelector('.toggle-btn[onclick="toggleSection(\'pending\')"]');
+            const completedBtn = document.querySelector('.toggle-btn[onclick="toggleSection(\'completed\')"]');
+
+            if (section === 'pending') {
+                pendingSection.classList.remove('hidden');
+                completedSection.classList.add('hidden');
+                pendingBtn.classList.add('active');
+                completedBtn.classList.remove('active');
+            } else {
+                pendingSection.classList.add('hidden');
+                completedSection.classList.remove('hidden');
+                pendingBtn.classList.remove('active');
+                completedBtn.classList.add('active');
+            }
+        };
+
+        function renderOrders() {
+            const ordersContainer = document.getElementById('ordersContainer');
+            const pendingOrdersGrid = document.getElementById('pendingOrdersGrid');
+            const completedOrdersGrid = document.getElementById('completedOrdersGrid');
+            const ordersRef = ref(db, 'orders');
+
+            onValue(ordersRef, (snapshot) => {
+                const data = snapshot.val();
+
+                let pendingCardsHTML = '';
+                let completedCardsHTML = '';
+
+                if (!data) {
+                    pendingOrdersGrid.innerHTML = `<div class="empty-state"><i class="fas fa-hourglass-half"></i><p>No pending orders.</p></div>`;
+                    completedOrdersGrid.innerHTML = `<div class="empty-state"><i class="fas fa-check-double"></i><p>No completed orders.</p></div>`;
+                    return;
+                }
+
+                try {
+                    Object.entries(data).forEach(([orderId, order]) => {
+                        const { address, order: orderDetails, timestamp, status } = order;
+
+                        // Safely check for required fields with default values
+                        const safeOrderDetails = orderDetails || {};
+                        const products = Array.isArray(safeOrderDetails.products) ? safeOrderDetails.products : [];
+                        const subtotal = safeOrderDetails.subtotal || 0;
+                        const shipping = safeOrderDetails.shipping || 0;
+                        const discount = safeOrderDetails.discount || 0;
+                        const total = safeOrderDetails.total || 0;
+                        const safeAddress = address || { name: 'N/A', phone: 'N/A', address: 'N/A', upazila: 'N/A', district: 'N/A', division: 'N/A' };
+
+                        if (products.length === 0) {
+                            console.warn(`Order ${orderId} has no products. Skipping...`);
+                            return;
+                        }
+
+                        const firstProductImage = products[0]?.image || 'https://via.placeholder.com/80';
+                        let productListHTML = '<div class="order-products-list">';
+                        products.forEach(product => {
+                            productListHTML += `
+                                <div class="order-product-item">
+                                    <img src="${product.image || 'https://via.placeholder.com/50'}" alt="${product.name}" class="order-product-item img">
+                                    <span>${product.name} | Size: ${product.size || 'N/A'} | Color: ${product.color || 'N/A'} | Qty: ${product.quantity} | Price: ৳${((product.price || 0) * (product.quantity || 1)).toFixed(2)}</span>
+                                </div>`;
+                        });
+                        productListHTML += '</div>';
+
+                        const cardHTML = `
+                            <div class="order-card-compact">
+                                <div class="order-info-header">
+                                    <img src="${firstProductImage}" alt="Product Image" class="order-image-compact">
+                                    <div class="order-header-compact">
+                                        <div class="order-id-compact">#${orderId.slice(-6)}</div>
+                                        <div class="order-status-compact ${status.toLowerCase()}">${status}</div>
+                                    </div>
+                                </div>
+
+                                <div class="order-details-compact">
+                                    Order Date: ${formatDate(timestamp)}<br>
+                                    Customer: ${safeAddress.name}<br>
+                                    Phone: ${safeAddress.phone}
+                                </div>
+                                <div class="order-address-compact">
+                                    <strong>Delivery Address:</strong><br>
+                                    ${safeAddress.address}, ${safeAddress.upazila}, ${safeAddress.district}, ${safeAddress.division}
+                                </div>
+
+                                ${productListHTML}
+
+                                <div class="order-summary-details">
+                                    <div class="summary-row"><span>Subtotal:</span><span>৳ ${subtotal.toFixed(2)}</span></div>
+                                    <div class="summary-row"><span>Shipping Fee:</span><span>৳ ${shipping.toFixed(2)}</span></div>
+                                    <div class="summary-row"><span>Discount:</span><span>-৳ ${discount.toFixed(2)}</span></div>
+                                    <div class="summary-row total-price"><span>Total:</span><span>৳ ${total.toFixed(2)}</span></div>
+                                </div>
+
+                                ${status === 'Pending' ? `<button class="complete-button-compact" onclick="completeOrder('${orderId}')">Complete Order</button>` : ''}
+                            </div>
+                        `;
+
+                        if (status === 'Pending') {
+                            pendingCardsHTML += cardHTML;
+                        } else if (status === 'Completed') {
+                            completedCardsHTML += cardHTML;
+                        }
+                    });
+
+                    pendingOrdersGrid.innerHTML = pendingCardsHTML || `<div class="empty-state"><i class="fas fa-hourglass-half"></i><p>No pending orders.</p></div>`;
+                    completedOrdersGrid.innerHTML = completedCardsHTML || `<div class="empty-state"><i class="fas fa-check-double"></i><p>No completed orders.</p></div>`;
+
+                } catch (error) {
+                    console.error('Error rendering orders:', error);
+                    ordersContainer.innerHTML = `
+                        <div class="error-state">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <p>Something went wrong while loading orders. Please try again later.</p>
+                        </div>
+                    `;
+                }
+            }, (error) => {
+                console.error('Firebase error:', error);
+                ordersContainer.innerHTML = `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Failed to connect to the server. Please check your internet connection.</p>
+                    </div>
+                `;
+            });
+        }
+
+        window.completeOrder = function(orderId) {
+            const orderRef = ref(db, `orders/${orderId}`);
+            update(orderRef, { status: 'Completed' })
+                .then(() => {
+                    alert(`Order #${orderId.slice(-6)} marked as completed!`);
+                    renderOrders();
+                })
+                .catch((error) => {
+                    console.error('Error updating order status:', error);
+                    alert('Failed to update order status. Please try again.');
+                });
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderOrders();
+        });
+    </script>
+</body>
+</html>
